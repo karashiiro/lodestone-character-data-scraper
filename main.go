@@ -19,7 +19,7 @@ var characterCount uint32 = 35261910 // Highest as of April 1, 2021 2:52 PM PDT
 
 // Number of goroutines to execute at once. Setting this too high will
 // get you IP-blocked for a couple of days (can still log into the game).
-var parallelism uint32 = 4
+var parallelism uint32 = 8
 
 // Number of characters to skip in iteration. Multiply this by
 // the character count to get the maximum ID the program will attempt
@@ -70,7 +70,6 @@ func getCreationInfos(scraper *godestone.Scraper, ids chan uint32, done chan []*
 		log.Println("Scraping character " + strconv.Itoa(int(i)))
 
 		c, err1 := scraper.FetchCharacter(i)
-		acc, aai, err2 := scraper.FetchCharacterAchievements(i)
 		if err1 == nil {
 			currentCreationInfo := &CharacterInfo{
 				ID:             i,
@@ -87,6 +86,7 @@ func getCreationInfos(scraper *godestone.Scraper, ids chan uint32, done chan []*
 			}
 
 			// Add achievement info, if possible
+			acc, aai, err2 := scraper.FetchCharacterAchievements(i)
 			if err2 == nil {
 				oldest := now
 				hasAny := false
