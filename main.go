@@ -38,7 +38,12 @@ func (t Time) MarshalCSV() ([]byte, error) {
 
 type CharacterInfo struct {
 	ID                uint32 `csv:"id"`
+	Name              string `csv:"name"`
 	World             string `csv:"world"`
+	Avatar            string `csv:"avatar"`
+	ActiveClassJob    uint8  `csv:"active_classjob_id"`
+	FreeCompany       string `csv:"free_company_id"`
+	PVPTeam           string `csv:"pvp_team_id"`
 	FirstAchievement  Time   `csv:"first_achievement"`
 	Achievements      uint32 `csv:"achievements"`
 	AchievementPoints uint32 `csv:"achievements"`
@@ -65,12 +70,17 @@ func getCreationInfos(scraper *godestone.Scraper, ids chan uint32, done chan []*
 		acc, aai, err2 := scraper.FetchCharacterAchievements(i)
 		if err1 == nil {
 			currentCreationInfo := &CharacterInfo{
-				ID:     i,
-				World:  c.World,
-				Race:   c.Race.NameFeminineEN,   // Masculine and feminine names are the same in English
-				Clan:   c.Tribe.NameMasculineEN, // Same as above
-				Gender: stringifyGender(c.Gender),
-				City:   c.Town.NameEN,
+				ID:             i,
+				Name:           c.Name,
+				World:          c.World,
+				Avatar:         c.Avatar,
+				ActiveClassJob: c.ActiveClassJob.UnlockedState.ID,
+				FreeCompany:    c.FreeCompanyID,
+				PVPTeam:        c.PvPTeamID,
+				Race:           c.Race.NameFeminineEN,   // Masculine and feminine names are the same in English
+				Clan:           c.Tribe.NameMasculineEN, // Same as above
+				Gender:         stringifyGender(c.Gender),
+				City:           c.Town.NameEN,
 			}
 
 			// Add achievement info, if possible
