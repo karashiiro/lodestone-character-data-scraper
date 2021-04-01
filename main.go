@@ -8,21 +8,22 @@ import (
 	"github.com/jszwec/csvutil"
 	"github.com/karashiiro/bingode"
 	"github.com/xivapi/godestone/v2"
+	"github.com/xivapi/godestone/v2/data/gender"
 )
 
 // The number of characters to attempt to fetch. The program will
 // usually get much less than this, since many people keep their
 // achievements private.
-var characterCount uint32 = 10
+var characterCount uint32 = 35261910 // Highest as of April 1, 2021 2:52 PM PDT
 
 // Number of goroutines to execute at once. Setting this too high will
 // get you IP-blocked for a couple of days (can still log into the game).
-var parallelism uint32 = 3
+var parallelism uint32 = 4
 
 // Number of characters to skip in iteration. Multiply this by
 // the character count to get the maximum ID the program will attempt
 // to fetch.
-var sampleRate uint32 = 2
+var sampleRate uint32 = 1
 
 type Time struct {
 	time.Time
@@ -35,33 +36,62 @@ func (t Time) MarshalCSV() ([]byte, error) {
 	return t.AppendFormat(b[:0], format), nil
 }
 
-type IDCreationInfo struct {
-	ID        uint32 `csv:"id"`
-	CreatedAt Time   `csv:"created_at"`
+type CharacterInfo struct {
+	ID                uint32 `csv:"id"`
+	FirstAchievement  Time   `csv:"first_achievement"`
+	Achievements      uint32 `csv:"achievements"`
+	AchievementPoints uint32 `csv:"achievements"`
+	Race              string `csv:"race"`
+	Clan              string `csv:"clan"`
+	Gender            string `csv:"gender"`
+	City              string `csv:"starting_city"`
 }
 
-func getCreationInfos(scraper *godestone.Scraper, ids chan uint32, done chan []*IDCreationInfo) {
-	creationInfo := make([]*IDCreationInfo, 0)
+func stringifyGender(g gender.Gender) string {
+	if g == gender.Male {
+		return "Male"
+	} else {
+		return "Female"
+	}
+}
+
+func getCreationInfos(scraper *godestone.Scraper, ids chan uint32, done chan []*CharacterInfo) {
+	creationInfo := make([]*CharacterInfo, 0)
 
 	now := time.Now()
 	for i := range ids {
-		acc, _, err := scraper.FetchCharacterAchievements(i)
-		if err == nil {
-			oldest := now
-			hasAny := false
-			for _, a := range acc {
-				if a.Date.Before(oldest) {
-					oldest = a.Date
-					hasAny = true
-				}
+		c, err1 := scraper.FetchCharacter(i)
+		acc, aai, err2 := scraper.FetchCharacterAchievements(i)
+		if err1 == nil {
+			currentCreationInfo := &CharacterInfo{
+				ID: i,
+
+				Race:   c.Race.NameFeminineEN,   // Masculine and feminine names are the same in English
+				Clan:   c.Tribe.NameMasculineEN, // Same as above
+				Gender: stringifyGender(c.Gender),
+				City:   c.Town.NameEN,
 			}
 
-			if hasAny {
-				creationInfo = append(creationInfo, &IDCreationInfo{
-					CreatedAt: Time{oldest},
-					ID:        i,
-				})
+			// Add achievement info, if possible
+			if err2 == nil {
+				oldest := now
+				hasAny := false
+				for _, a := range acc {
+					if a.Date.Before(oldest) {
+						oldest = a.Date
+						hasAny = true
+					}
+				}
+
+				if hasAny {
+					currentCreationInfo.FirstAchievement = Time{oldest}
+				}
+
+				currentCreationInfo.Achievements = aai.TotalAchievements
+				currentCreationInfo.AchievementPoints = aai.TotalAchievementPoints
 			}
+
+			creationInfo = append(creationInfo, currentCreationInfo)
 		}
 	}
 	done <- creationInfo
@@ -73,11 +103,11 @@ func main() {
 
 	charsPerGoroutine := characterCount / parallelism
 
-	creationInfo := make([]*IDCreationInfo, 0)
-	creationInfoChans := make([]chan []*IDCreationInfo, parallelism)
+	creationInfo := make([]*CharacterInfo, 0)
+	creationInfoChans := make([]chan []*CharacterInfo, parallelism)
 	for i := uint32(0); i < parallelism; i++ {
 		idChan := make(chan uint32, charsPerGoroutine)
-		creationInfoChans[i] = make(chan []*IDCreationInfo, 1)
+		creationInfoChans[i] = make(chan []*CharacterInfo, 1)
 
 		go getCreationInfos(scraper, idChan, creationInfoChans[i])
 
