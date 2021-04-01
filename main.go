@@ -12,9 +12,7 @@ import (
 	"github.com/xivapi/godestone/v2/data/gender"
 )
 
-// The number of characters to attempt to fetch. The program will
-// usually get much less than this, since many people keep their
-// achievements private.
+// The number of characters to attempt to fetch.
 var characterCount uint32 = 35261910 // Highest as of April 1, 2021 2:52 PM PDT
 
 // Number of goroutines to execute at once. Setting this too high will
