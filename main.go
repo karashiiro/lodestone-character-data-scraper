@@ -69,6 +69,7 @@ func getCreationInfos(scraper *godestone.Scraper, ids chan uint32, done chan []*
 
 	now := time.Now()
 	for i := range ids {
+		idsLeft--
 		startTime := time.Now()
 		c, err1 := scraper.FetchCharacter(i)
 		if err1 == nil {
@@ -117,7 +118,6 @@ func getCreationInfos(scraper *godestone.Scraper, ids chan uint32, done chan []*
 
 			// Logging
 			lastRequestDuration = time.Since(startTime)
-			idsLeft--
 			timeRemaining := lastRequestDuration.Seconds() * float64(idsLeft) / float64(parallelism)
 			timeUnits := "seconds"
 			if timeRemaining > 60 {
