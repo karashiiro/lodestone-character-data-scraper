@@ -14,16 +14,16 @@ import (
 )
 
 // The number of characters to attempt to fetch.
-var characterCount uint32 = 35261910 / 100 // Highest as of April 1, 2021 2:52 PM PDT
+var characterCount uint32 = 35261910 / 10 // Highest as of April 1, 2021 2:52 PM PDT
 
 // Number of goroutines to execute at once. Setting this too high will
 // get you IP-blocked for a couple of days (can still log into the game).
-var parallelism uint32 = 40
+var parallelism uint32 = 300
 
 // Number of characters to skip in iteration. Multiply this by
 // the character count to get the maximum ID the program will attempt
 // to fetch.
-var sampleRate uint32 = 100
+var sampleRate uint32 = 10
 
 type Time struct {
 	time.Time
@@ -73,7 +73,7 @@ func getCreationInfos(scraper *godestone.Scraper, ids chan uint32, done chan []*
 		startTime := time.Now()
 		c, err1 := scraper.FetchCharacter(i)
 		if err1 == nil {
-			if c.Name == "" || c.World == "" {
+			if c.Race == nil {
 				continue
 			}
 
