@@ -72,6 +72,10 @@ func getCreationInfos(scraper *godestone.Scraper, ids chan uint32, done chan []*
 		startTime := time.Now()
 		c, err1 := scraper.FetchCharacter(i)
 		if err1 == nil {
+			if c.Name == "" || c.World == "" {
+				continue
+			}
+
 			currentCreationInfo := &CharacterInfo{
 				ID:          i,
 				Name:        c.Name,
