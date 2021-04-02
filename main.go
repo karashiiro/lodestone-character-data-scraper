@@ -18,7 +18,7 @@ var characterCount uint32 = 35261910 / 100 // Highest as of April 1, 2021 2:52 P
 
 // Number of goroutines to execute at once. Setting this too high will
 // get you IP-blocked for a couple of days (can still log into the game).
-var parallelism uint32 = 30
+var parallelism uint32 = 60
 
 // Number of characters to skip in iteration. Multiply this by
 // the character count to get the maximum ID the program will attempt
