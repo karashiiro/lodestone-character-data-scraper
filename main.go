@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -13,16 +14,16 @@ import (
 )
 
 // The number of characters to attempt to fetch.
-var characterCount uint32 = 35261910 // Highest as of April 1, 2021 2:52 PM PDT
+var characterCount uint32 = 35261910 / 100 // Highest as of April 1, 2021 2:52 PM PDT
 
 // Number of goroutines to execute at once. Setting this too high will
 // get you IP-blocked for a couple of days (can still log into the game).
-var parallelism uint32 = 6
+var parallelism uint32 = 20
 
 // Number of characters to skip in iteration. Multiply this by
 // the character count to get the maximum ID the program will attempt
 // to fetch.
-var sampleRate uint32 = 1
+var sampleRate uint32 = 100
 
 type Time struct {
 	time.Time
@@ -60,27 +61,32 @@ func stringifyGender(g gender.Gender) string {
 	}
 }
 
+var idsLeft = characterCount
+var lastRequestDuration time.Duration
+
 func getCreationInfos(scraper *godestone.Scraper, ids chan uint32, done chan []*CharacterInfo) {
 	creationInfo := make([]*CharacterInfo, 0)
 
 	now := time.Now()
 	for i := range ids {
-		log.Println("Scraping character " + strconv.Itoa(int(i)))
-
+		startTime := time.Now()
 		c, err1 := scraper.FetchCharacter(i)
 		if err1 == nil {
 			currentCreationInfo := &CharacterInfo{
-				ID:             i,
-				Name:           c.Name,
-				World:          c.World,
-				Avatar:         c.Avatar,
-				ActiveClassJob: c.ActiveClassJob.UnlockedState.ID,
-				FreeCompany:    c.FreeCompanyID,
-				PVPTeam:        c.PvPTeamID,
-				Race:           c.Race.NameFeminineEN,   // Masculine and feminine names are the same in English
-				Clan:           c.Tribe.NameMasculineEN, // Same as above
-				Gender:         stringifyGender(c.Gender),
-				City:           c.Town.NameEN,
+				ID:          i,
+				Name:        c.Name,
+				World:       c.World,
+				Avatar:      c.Avatar,
+				FreeCompany: c.FreeCompanyID,
+				PVPTeam:     c.PvPTeamID,
+				Race:        c.Race.NameFeminineEN,   // Masculine and feminine names are the same in English
+				Clan:        c.Tribe.NameMasculineEN, // Same as above
+				Gender:      stringifyGender(c.Gender),
+				City:        c.Town.NameEN,
+			}
+
+			if c.ActiveClassJob != nil {
+				currentCreationInfo.ActiveClassJob = c.ActiveClassJob.UnlockedState.ID
 			}
 
 			// Add achievement info, if possible
@@ -104,6 +110,25 @@ func getCreationInfos(scraper *godestone.Scraper, ids chan uint32, done chan []*
 			}
 
 			creationInfo = append(creationInfo, currentCreationInfo)
+
+			// Logging
+			lastRequestDuration = time.Since(startTime)
+			idsLeft--
+			timeRemaining := lastRequestDuration.Seconds() * float64(idsLeft) / float64(parallelism)
+			timeUnits := "seconds"
+			if timeRemaining > 60 {
+				timeRemaining /= 60
+				timeUnits = "minutes"
+				if timeRemaining > 60 {
+					timeRemaining /= 60
+					timeUnits = "hours"
+					if timeRemaining > 24 {
+						timeRemaining /= 24
+						timeUnits = "days"
+					}
+				}
+			}
+			fmt.Println("ETA:", strconv.FormatFloat(timeRemaining, 'f', 6, 64), timeUnits, "remaining")
 		}
 	}
 	done <- creationInfo
