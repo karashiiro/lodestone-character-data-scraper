@@ -13,8 +13,10 @@ import (
 	"github.com/xivapi/godestone/v2/data/gender"
 )
 
+var highestID uint32 = 35261910 // As of April 1, 2021 2:52 PM PDT
+
 // The number of characters to attempt to fetch.
-var characterCount uint32 = 35261910 // Highest as of April 1, 2021 2:52 PM PDT
+var characterCount uint32 = highestID / 4
 
 // Number of goroutines to execute at once. Setting this too high will
 // get you IP-blocked for a couple of days (can still log into the game).
@@ -25,6 +27,9 @@ var parallelism uint32 = 16
 // the character count to get the maximum ID the program will attempt
 // to fetch.
 var sampleRate uint32 = 1
+
+// ID to start from.
+var offset uint32 = 0
 
 type Time struct {
 	time.Time
@@ -153,8 +158,8 @@ func main() {
 
 		go getCreationInfos(scraper, idChan, creationInfoChans[i])
 
-		startID := uint32(1+i*charsPerGoroutine) * sampleRate
-		endID := uint32((i+1)*charsPerGoroutine) * sampleRate
+		startID := uint32(1+i*charsPerGoroutine)*sampleRate + offset
+		endID := uint32((i+1)*charsPerGoroutine)*sampleRate + offset
 
 		for j := startID; j <= endID; j += sampleRate {
 			idChan <- j
