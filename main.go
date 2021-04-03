@@ -14,17 +14,17 @@ import (
 )
 
 // The number of characters to attempt to fetch.
-var characterCount uint32 = 35261910 / 10 // Highest as of April 1, 2021 2:52 PM PDT
+var characterCount uint32 = 35261910 // Highest as of April 1, 2021 2:52 PM PDT
 
 // Number of goroutines to execute at once. Setting this too high will
 // get you IP-blocked for a couple of days (can still log into the game).
 // On non-residential IPs the rate limit seems to be significantly higher.
-var parallelism uint32 = 20
+var parallelism uint32 = 16
 
 // Number of characters to skip in iteration. Multiply this by
 // the character count to get the maximum ID the program will attempt
 // to fetch.
-var sampleRate uint32 = 10
+var sampleRate uint32 = 1
 
 type Time struct {
 	time.Time
