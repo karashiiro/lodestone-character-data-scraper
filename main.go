@@ -16,12 +16,12 @@ import (
 var highestID uint32 = 35261910 // As of April 1, 2021 2:52 PM PDT
 
 // The number of characters to attempt to fetch.
-var characterCount uint32 = highestID / 4
+var characterCount uint32 = highestID / 10
 
 // Number of goroutines to execute at once. Setting this too high will
 // get you IP-blocked for a couple of days (can still log into the game).
 // On non-residential IPs the rate limit seems to be significantly higher.
-var parallelism uint32 = 30
+var parallelism uint32 = 60
 
 // Number of characters to skip in iteration. Multiply this by
 // the character count to get the maximum ID the program will attempt
